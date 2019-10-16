@@ -1,0 +1,19 @@
+#!/usr/bin/php
+<?php
+
+require __DIR__ . '/lib.php';
+
+define('MIN_WORKERS_COUNT', 1);
+define('DEFAULT_SITEMAP_URL', "https://mcprod.sportsgirl.com.au/media/sitemap.xml");
+define('DEFAULT_RUN_MODE', "t");
+
+$workersCount = arguments($argv)['workersCount'] ?? MIN_WORKERS_COUNT;
+$sitemapUrl = arguments($argv)['sitemap_url'] ?? DEFAULT_SITEMAP_URL;
+$mode = arguments($argv)['mode'] ?? DEFAULT_RUN_MODE;
+
+for ($i = 1; $i <= $workersCount; $i++) {
+    $logFile = "log/worker_{$i}.log";
+    $errorLogFile = "log/error/worker_{$i}_error.log";
+
+    shell_exec("/usr/bin/php wfpc -{$mode} {$sitemapUrl} --workersCount={$workersCount} --workerId={$i} > $logFile 2> $errorLogFile &");
+}

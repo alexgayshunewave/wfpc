@@ -10,3 +10,6 @@ public/apc.php
 *.swp
 *.swo
 *.swn
+log/*.log
+
+log/error/*.log

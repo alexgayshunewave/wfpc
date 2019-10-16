@@ -22,21 +22,32 @@ class MageCacheWarmer
         $_cStatusCallback,
         $_fAvgDownloadTime,
         $_iTotalDownloadTime,
-        $_rStreamContext;
+        $_rStreamContext,
+        $_workersCount,
+        $_workerId;
 
     public function getAvgDownloadTime()   { return $this->_fAvgDownloadTime;   }
     public function getTotalDownloadTime() { return $this->_iTotalDownloadTime; }
 
     /**
      * Download the sitemap for testing / warming.
+     *
+     * @param $sSitemapUrl
+     * @param $cStatusCallback
+     * @param $iDelay
+     * @param $iUnsecure
+     * @param $workersCount
+     * @param $workerId
      */
-    public function __construct($sSitemapUrl, $cStatusCallback, $iDelay, $iUnsecure)
+    public function __construct($sSitemapUrl, $cStatusCallback, $iDelay, $iUnsecure, $workersCount, $workerId)
     {
         $this->_sSitemapUrl     = $sSitemapUrl;
         $this->_cStatusCallback = $cStatusCallback;
         $this->_iDelay          = $iDelay;
         $this->_iUnsecure       = $iUnsecure;
         $this->_rStreamContext  = $this->_createStreamContext();
+        $this->_workersCount    = $workersCount;
+        $this->_workerId        = $workerId;
     }
 
     /**
@@ -72,7 +83,7 @@ class MageCacheWarmer
 
         call_user_func($this->_cStatusCallback, "Testing with $iNumUrls URLs" . PHP_EOL);
 
-        $this->_run($aTestUrls);
+        $this->_runTest($aTestUrls);
 
         call_user_func(
             $this->_cStatusCallback,
@@ -133,7 +144,7 @@ class MageCacheWarmer
     /**
      * Download the URLs, timing each one
      */
-    private function _run(array $aUrls)
+    private function _runTest(array $aUrls)
     {
         $iNumUrls           = count($aUrls);
         $iTotalDownloadTime = 0;
@@ -157,6 +168,45 @@ class MageCacheWarmer
             if($this->_iDelay > 0) {
                 sleep($this->_iDelay);
             }
+        }
+
+        // Store the average download time
+        $this->_fAvgDownloadTime   = $iTotalDownloadTime * 1000 / $iNumUrls;
+        $this->_iTotalDownloadTime = $iTotalDownloadTime;
+    }
+
+    /**
+     * Download the URLs, timing each one
+     */
+    private function _run(array $aUrls)
+    {
+        $iNumUrls           = count($aUrls);
+        $iTotalDownloadTime = 0;
+
+        $position = $this->_workerId ;
+        $increment = $this->_workersCount;
+
+        while ($position <= $iNumUrls) {
+            // Log the request
+            $sUrl = $aUrls[$position-1];
+            call_user_func(
+                $this->_cStatusCallback,
+                "($position/{$iNumUrls}) - Fetching " . $sUrl . PHP_EOL);
+
+            // Note the start time and download the page
+            $iPageStartTime = microtime(true);
+
+            file_get_contents($sUrl, false, $this->_rStreamContext);
+
+            // Update the total download time
+            $iTotalDownloadTime += microtime(true) - $iPageStartTime;
+
+            // Sleep between requests if we're told to
+            if($this->_iDelay > 0) {
+                sleep($this->_iDelay);
+            }
+
+            $position = $position + $increment;
         }
 
         // Store the average download time
