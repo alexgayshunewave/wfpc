@@ -7,15 +7,16 @@ FREE Magento full page cache warmer
 
 ## Crontab Configuration
 ```
-0 5 * * * /var/www/wfpc/crawler --workersCount=X --mode=Y
+0 5 * * * /var/www/wfpc/crawler --sitemapUrl=https://website.url/sitemap.xml --workersCount=X --mode=Y
 ```
- * X - number of necessary parallel workers (1 by default)
- * Y - crawler mode: "t" or "w" ("t" by default)
+ * `sitemapUrl` - http or https URL to `sitemap.xml` file
+ * `X` - number of necessary parallel workers (1 by default)
+ * `Y` - crawler mode: `"t"` or `"w"` (`"t"` by default)
  
-E.g. if X=3, mode=w, cron job will create 3 PHP processes (workers). Each worker will be crawling sitemap URLs with the next increment IDs:
- * Worker 1 will parse IDs 1,4,7,10,13,...
- * Worker 2 will parse IDs 2,5,8,11,14,...
- * Worker 3 will parse IDs 3,6,9,12,15,...
+E.g. if `X=3`, `mode=w`, cron job will create 3 PHP processes (workers). Each worker will be crawling sitemap URLs with the next increment IDs:
+ * `Worker 1` will parse IDs 1,4,7,10,13,...
+ * `Worker 2` will parse IDs 2,5,8,11,14,...
+ * `Worker 3` will parse IDs 3,6,9,12,15,...
  
 Each worker will have it's own log files: ./log/worker_ID.log and ./log/error/worker_ID_error.log
 
